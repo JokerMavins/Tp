@@ -1,0 +1,93 @@
+import gzip
+import seaborn as sns
+import matplotlib.pyplot as plt 
+
+# Fonction pour encoder la séquence
+def encode(data):
+    mapping = {'A': 0b00, 'T': 0b11, 'G': 0b10, 'C': 0b01}
+    binary_sequence = 0
+    for nucleotide in data:
+        binary_sequence = (binary_sequence << 2) | mapping.get(nucleotide, 0)
+    return bin(binary_sequence)
+
+
+# Fonction pour ligne la sequence dans le fichier fastq
+def read_fastq(file_path):
+    sequences = []
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+        for i in range(0, len(lines), 4):
+            sequence_line = lines[i + 1].strip()
+            sequences.append(sequence_line)
+            
+    return encode(sequences[0])
+
+    
+#Fonction qui compte l'occurence 
+def count_occ(n, data):
+    i = 2
+    j = 2
+    k_mers = ""
+    occ = 0
+    tab = {}
+
+    while i < len(data) * 2:
+        k_mers = data[i:(2*n)+i]
+        if len(k_mers) == 2*n :
+            while j < len(data) * 2:
+                if k_mers == data[j:(2*n)+j]:
+                    occ += 1
+                j += 2
+            i += 2
+            j = 0
+            tab[k_mers] = occ
+            occ = 0
+        else:
+            break 
+    return tab
+        
+
+#Fonction qui decode pour enregistrer 
+def decode(encoded_data):
+    mapping = {0b00: 'A', 0b11 : 'T' , 0b10 : 'G', 0b01 : 'C'}
+    binary_sequence = int(encoded_data, 2)
+    decode_sequence = ""
+    while binary_sequence:
+        nucleotide = binary_sequence & 0b11
+        decode_sequence = mapping[nucleotide] + decode_sequence
+        binary_sequence >>= 2
+    return decode_sequence
+
+#Fonction qui dessine le graphe
+def plot(tab):
+    sns.lineplot(x=list(tab.keys()), y = list(tab.values()))
+    plt.xlabel("Sous-séquence")
+    plt.ylabel("Nombre d'occurrences")
+    plt.show()
+
+
+#Fonction qui sauvegarde dans le fichier
+def save_to_file(data, file_path):
+    k_mers_frequent = max(list(result.keys()))
+    k_mers_value_frequent = max(list(result.values()))
+
+    try:
+        with open(file_path, 'w') as file:
+            file.write(f"Le k-mer le plus frequent est {decode(k_mers_frequent)} d'une frequence de {k_mers_value_frequent} \n")
+            file.write(f"Liste des occurences\n")
+            for k_mers, occurence in data.items():
+                file.write(f"{decode(k_mers)} : {occurence}\n")
+        print(f"Données enregistrées avec succès dans {file_path}")
+    except IOError as e:
+        print(f"Erreur lors de l'enregistrement des données : {e}")
+
+
+
+data = read_fastq("C:/Users/HD/Downloads/chry5_S14_L001_R1_001.fastq/chry5_S14_L001_R1_001.fastq")
+
+result = count_occ(14, data)
+
+print(list(result.items()))
+
+save_to_file(result, "C:/Users/HD/Downloads/output.txt")
+

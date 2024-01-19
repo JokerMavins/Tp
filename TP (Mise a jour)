@@ -87,7 +87,5 @@ data = read_fastq("C:/Users/HD/Downloads/chry5_S14_L001_R1_001.fastq/chry5_S14_L
 
 result = count_occ(14, data)
 
-print(list(result.items()))
-
 save_to_file(result, "C:/Users/HD/Downloads/output.txt")
 
